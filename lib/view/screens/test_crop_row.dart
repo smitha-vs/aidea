@@ -1,4 +1,5 @@
 // Updated CropTablePages with advanced features
+import 'package:aidea/view/screens/dropdown_crops__example.dart';
 import 'package:aidea/view/screens/test_crop_row.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:dropdown_searchable_field/dropdown_searchable_field.dart';
@@ -12,6 +13,7 @@ import '../../controller/crop_area_show.dart';
 import '../../controller/crop_data_save.dart';
 import '../../controller/crop_dropdown_menu.dart';
 import '../../controller/crop_row_test.dart';
+import '../../controller/dropdown_crops.dart';
 import '../../controller/plot_details.dart';
 import '../../model/crop_list.dart';
 import '../../resources/constants/colours.dart';
@@ -27,6 +29,9 @@ class CropTablePages extends StatelessWidget {
   );
   final MenuDropdownController menuController = Get.put(
     MenuDropdownController(),
+  );
+  final DropdownCropsController dropdownCropsController= Get.put(
+    DropdownCropsController (),
   );
   final CropDataSave save = Get.put(CropDataSave());
   final cropName = 'Select Crop'.obs;
@@ -209,100 +214,220 @@ class CropTablePages extends StatelessWidget {
                   ),
                 );
               }
-              return DropDownSearchableField(
-                items:
-                filteredCrops.map((e) {
-                  final seasonalName =
-                  seasonalClassificationNameValues.reverse[e
-                      .seasonalClassificationName];
-                  return e.seasonalClassificationName ==
-                      SeasonalClassificationName.NO_CLASSIFICATION
-                      ? e.cropNameEn
-                      : "${e.cropNameEn} ($seasonalName)";
-                }).toList(),
-                controller: row.searchController,
-                itemBuilder: (context, item) {
-                  return Container(
-                    color: Colors.pink[50], // 🎨 Change this to any color you want
-                    child: ListTile(
-                      title: Text(item),
+              final selectedIds = menuController.selectedCrops.map((e) => e.mappingId).toSet();
+
+              return Center(
+                child: Obx(() {
+                  final availableCrops = dropdownCropsController.crops
+                      .where((crop) =>
+                  crop.seasonalClassificationName != SeasonalClassificationName.NO_CLASSIFICATION &&
+                      !selectedIds.contains(crop.mappingId))
+                      .toList();
+
+                  return DropdownButtonHideUnderline(
+                    child: DropdownButton2<AllCropsList>(
+                      isExpanded: true,
+                      hint: const Text('Select a crop'),
+                      items: availableCrops.map((crop) {
+                        final seasonalName = seasonalClassificationNameValues.reverse[crop.seasonalClassificationName];
+                        final label = '${crop.cropNameEn} (${seasonalName?.capitalizeFirst})';
+                        return DropdownMenuItem(
+                          value: crop,
+                          child: Text(label),
+                        );
+                      }).toList(),
+                      value: dropdownCropsController.selectedCrop.value != null &&
+                          dropdownCropsController.selectedCrop.value!.seasonalClassificationName !=
+                              SeasonalClassificationName.NO_CLASSIFICATION &&
+                          !selectedIds.contains(dropdownCropsController.selectedCrop.value!.mappingId)
+                          ? dropdownCropsController.selectedCrop.value
+                          : null,
+                      onChanged: (value) async {
+                        if (value != null &&
+                            value.seasonalClassificationName != SeasonalClassificationName.NO_CLASSIFICATION &&
+                            !selectedIds.contains(value.mappingId)) {
+
+                          dropdownCropsController.setSelectedCrop(value);
+
+                          /// 🔽 Compare area logic — make sure `row` is available in this context
+                          if (row.pendingEnteredArea.value > 0) {
+                            row.totalArea.value += row.pendingEnteredArea.value;
+                            row.pendingEnteredArea.value = 0.0;
+                            controller.calculateTotal();
+
+                            if (!row.hasAutoSaved.value) {
+                              row.hasAutoSaved.value = true;
+                              Future.delayed(const Duration(milliseconds: 500), () {
+                                controller.autoSaveCropDetails();
+                              });
+                            }
+                          }
+                        }
+                      },
+                      dropdownSearchData: DropdownSearchData(
+                        searchController: dropdownCropsController.searchController,
+                        searchInnerWidgetHeight: 50,
+                        searchInnerWidget: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: TextField(
+                            controller: dropdownCropsController.searchController,
+                            decoration: InputDecoration(
+                              isDense: true,
+                              contentPadding: const EdgeInsets.all(12),
+                              hintText: 'Search crops...',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                        searchMatchFn: (item, searchValue) {
+                          return item.value?.cropNameEn
+                              .toLowerCase()
+                              .contains(searchValue.toLowerCase()) ??
+                              false;
+                        },
+                      ),
+                      buttonStyleData: const ButtonStyleData(
+                        height: 50,
+                        width: 250,
+                      ),
+                      dropdownStyleData: const DropdownStyleData(
+                        maxHeight: 300,
+                      ),
+                      menuItemStyleData: const MenuItemStyleData(
+                        height: 40,
+                      ),
                     ),
                   );
-                },
-                onSelected: (selectedLabel) async {
-                  row.searchController.text = selectedLabel;
-                  final selectedCrop = filteredCrops.firstWhereOrNull((e) {
-                    final label =
-                    (e.seasonalClassificationName ==
-                        SeasonalClassificationName
-                            .NO_CLASSIFICATION ||
-                        seasonalClassificationNameValues.reverse[e
-                            .seasonalClassificationName] ==
-                            'No Classification')
-                        ? e.cropNameEn
-                        : "${e.cropNameEn} (${seasonalClassificationNameValues.reverse[e.seasonalClassificationName]})";
-                    return label == selectedLabel;
-                  });
-                  if (selectedCrop == null) return;
-                  if (row.totalArea.value > 0 && row.hasAutoSaved.isFalse) {
-                    row.hasAutoSaved.value = true;
-                    Future.delayed(
-                      Duration(milliseconds: 500),
-                          () => controller.autoSaveCropDetails(),
-                    );
-                  }
-                  row.selectedMappingId.value = selectedCrop.mappingId;
-                  row.selectedCrop.value = selectedCrop;
-                  if (row.pendingEnteredArea.value > 0) {
-                    row.totalArea.value += row.pendingEnteredArea.value;
-                    row.pendingEnteredArea.value = 0.0;
-                    controller.calculateTotal();
-                    if (!row.hasAutoSaved.value) {
-                      row.hasAutoSaved.value = true;
-                      Future.delayed(
-                        Duration(milliseconds: 500),
-                            () => controller.autoSaveCropDetails(),
-                      );
-                    }
-                  }
-                  menuController.selectedCrops.add(selectedCrop);
-                  final popupCrops = {32, 33, 81, 25, 26};
-                  final prefs = await SharedPreferences.getInstance();
-                  final clusterID = prefs.getString('selectedClusterId') ?? '';
-                  final selected = directionController.selectedDirection.value;
-                  final List<int> idsToSend = clusterController.cropIds.toList();
-                  if (popupCrops.contains(selectedCrop.mappingId)) {
-                    if (selected.isNotEmpty) {
-                      showCropSurveyPopup(
-                        context,
-                        selectedCrop.cropNameEn,
-                        clusterID,
-                            (popupArea) {
-                          row.totalArea.value = popupArea;
-                          controller.calculateTotal();
-                        },
-                        direction,
-                      );
-                    } else {
-                      Get.snackbar(
-                        "No Direction Selected",
-                        "Please select a direction first.",
-                      );
-                    }
-                  } else if(idsToSend.contains(selectedCrop.mappingId)) {
-                    showOtherCropPopup(
-                      context,
-                      selectedCrop.cropNameEn,
-                      clusterID,
-                      direction,
-                          (popupArea) {
-                        row.totalArea.value = popupArea;
-                        controller.calculateTotal();
-                      },
-                    );
-                  }
-                },
+                }),
               );
+
+
+              // Obx(() => DropdownButtonHideUnderline(
+              //    child:DropdownExample()
+              //   DropdownButton2<int>(
+              //     isExpanded: true,
+              //     hint: const Text('Search crop...'), // just show placeholder
+              //     value: availableCrops.any((e) => e.mappingId == row.selectedMappingId.value)
+              //         ? row.selectedMappingId.value
+              //         : null,
+              //     items: availableCrops.map((e) {
+              //       final seasonalName = seasonalClassificationNameValues.reverse[e.seasonalClassificationName];
+              //       final label = e.seasonalClassificationName == SeasonalClassificationName.NO_CLASSIFICATION
+              //           ? e.cropNameEn
+              //           : "${e.cropNameEn} ($seasonalName)";
+              //       return DropdownMenuItem<int>(
+              //         value: e.mappingId,
+              //         child: Text(label),
+              //       );
+              //     }).toList(),
+              //     onChanged: (selectedId) async {
+              //       final selectedCrop = availableCrops.firstWhereOrNull((e) => e.mappingId == selectedId);
+              //       if (selectedCrop == null) return;
+              //
+              //       // Update row state
+              //       row.selectedMappingId.value = selectedCrop.mappingId;
+              //       row.selectedCrop.value = selectedCrop;
+              //
+              //       // Set text in searchController just for internal tracking
+              //       final seasonalName = seasonalClassificationNameValues.reverse[selectedCrop.seasonalClassificationName];
+              //       row.searchController.text = selectedCrop.seasonalClassificationName == SeasonalClassificationName.NO_CLASSIFICATION
+              //           ? selectedCrop.cropNameEn
+              //           : "${selectedCrop.cropNameEn} ($seasonalName)";
+              //
+              //       // Auto save if needed
+              //       if (row.totalArea.value > 0 && row.hasAutoSaved.isFalse) {
+              //         row.hasAutoSaved.value = true;
+              //         Future.delayed(const Duration(milliseconds: 500), () {
+              //           controller.autoSaveCropDetails();
+              //         });
+              //       }
+              //
+              //       if (row.pendingEnteredArea.value > 0) {
+              //         row.totalArea.value += row.pendingEnteredArea.value;
+              //         row.pendingEnteredArea.value = 0.0;
+              //         controller.calculateTotal();
+              //         if (!row.hasAutoSaved.value) {
+              //           row.hasAutoSaved.value = true;
+              //           Future.delayed(const Duration(milliseconds: 500), () {
+              //             controller.autoSaveCropDetails();
+              //           });
+              //         }
+              //       }
+              //
+              //       menuController.selectedCrops.add(selectedCrop);
+              //
+              //       // Handle popups
+              //       final popupCrops = {32, 33, 81, 25, 26};
+              //       final prefs = await SharedPreferences.getInstance();
+              //       final clusterID = prefs.getString('selectedClusterId') ?? '';
+              //       final selected = directionController.selectedDirection.value;
+              //       final idsToSend = clusterController.cropIds.toList();
+              //
+              //       if (popupCrops.contains(selectedCrop.mappingId)) {
+              //         if (selected.isNotEmpty) {
+              //           showCropSurveyPopup(
+              //             context,
+              //             selectedCrop.cropNameEn,
+              //             clusterID,
+              //                 (popupArea) {
+              //               row.totalArea.value = popupArea;
+              //               controller.calculateTotal();
+              //             },
+              //             direction,
+              //           );
+              //         } else {
+              //           Get.snackbar("No Direction Selected", "Please select a direction first.");
+              //         }
+              //       } else if (idsToSend.contains(selectedCrop.mappingId)) {
+              //         showOtherCropPopup(
+              //           context,
+              //           selectedCrop.cropNameEn,
+              //           clusterID,
+              //           direction,
+              //               (popupArea) {
+              //             row.totalArea.value = popupArea;
+              //             controller.calculateTotal();
+              //           },
+              //         );
+              //       }
+              //     },
+              //     dropdownSearchData: DropdownSearchData(
+              //       searchController: row.searchController,
+              //       searchInnerWidgetHeight: 50,
+              //       searchInnerWidget: Padding(
+              //         padding: const EdgeInsets.all(8),
+              //         child: TextField(
+              //           controller: row.searchController,
+              //           decoration: InputDecoration(
+              //             isDense: true,
+              //             contentPadding: const EdgeInsets.all(12),
+              //             hintText: 'Search crop...',
+              //             border: OutlineInputBorder(
+              //               borderRadius: BorderRadius.circular(8),
+              //             ),
+              //           ),
+              //         ),
+              //       ),
+              //       searchMatchFn: (item, searchValue) {
+              //         final itemText = item.child is Text ? (item.child as Text).data ?? '' : '';
+              //         return itemText.toLowerCase().contains(searchValue.toLowerCase());
+              //       },
+              //     ),
+              //     buttonStyleData: const ButtonStyleData(
+              //       height: 50,
+              //       width: double.infinity,
+              //     ),
+              //     dropdownStyleData: const DropdownStyleData(
+              //       maxHeight: 300,
+              //     ),
+              //     menuItemStyleData: const MenuItemStyleData(
+              //       height: 48,
+              //     ),
+              //   ),
+              // )
+              // );
             }),
           ),
         ),
@@ -390,4 +515,6 @@ class CropRow {
   RxBool isCcePlot = false.obs;
   RxBool hasAutoSaved = false.obs;
   RxDouble pendingEnteredArea = 0.0.obs;
+  RxString selectedLabel = ''.obs;
+
 }

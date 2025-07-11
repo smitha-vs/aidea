@@ -1,4 +1,5 @@
 import 'package:aidea/resources/app_routes/routes.dart';
+import 'package:aidea/view/screens/dropdown_crops__example.dart';
 import 'package:aidea/view/screens/screen_splash.dart';
 import 'package:aidea/widget/app_theme.dart';
 import 'package:flutter/foundation.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+
 Future<void> requestLocationPermission() async {
   bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
   if (!serviceEnabled) {
@@ -20,6 +22,7 @@ Future<void> requestLocationPermission() async {
     return;
   }
 }
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await requestLocationPermission();
@@ -33,6 +36,7 @@ Future<void> main() async {
   });
   runApp(const MyApp());
 }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
@@ -41,7 +45,8 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
       home:
-       ScreenSplash(),
+      ScreenSplash(),
+      // DropdownExample(),
       getPages: AppRoutes.appRoutes(),
     );
   }

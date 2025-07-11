@@ -22,6 +22,7 @@ dependencies:
   flutter_dropdown_search: ^0.0.4
   dropdown_searchable_field: ^0.0.2
   dropdown_button2: ^2.3.9
+  dropdown_search: ^6.0.2
 
 
 dev_dependencies:
