@@ -1,0 +1,14 @@
+const String baseurl = 'http://10.10.32.45:8080';
+const String loginUrl = '$baseurl/user-access/api/login';
+const String cropListUrl ='$baseurl/earas-form1-entry/crop-details/fetch-all-crops';
+const String clusterListUrl ='$baseurl/btr-service/cluster-api/user-cluster-summary';
+const String keyPlotSave='$baseurl/earas-form1-entry/key-plot-details/save';
+const String lndTableSave='$baseurl/earas-form1-entry/land-utilization-details/save';
+const String fetchSources='$baseurl/earas-form1-entry/irrigation-details/fetch-all-sources';
+const String saveIrrigation='$baseurl/earas-form1-entry/irrigation-details/save';
+const String saveCropData='$baseurl/earas-form1-entry/crop-details/save';
+const String zoneDetails='$baseurl/btr-service/btr-api/zone-details/3bc4b01d-8d4b-4c2c-94ab-50bf4fdce924';
+const String clusterSidePlots='$baseurl/btr-service/cluster-api/cluster-labels';
+const String removePlots='$baseurl/btr-service/cluster-api/cluster-labels/delete';
+const String paddySave ='$baseurl/earas-form1-entry/available-plot-for-paddy/save';
+const String availablePlotList ='$baseurl/earas-form1-entry/available-cce-plot-details/fetch-by-id';

@@ -1,0 +1,29 @@
+class RouteNames {
+  static const splashScreen = '/';
+  static const responsiveScreen = '/responsiveLayout';
+  static const dashboardScreen = '/dashboardScreen';
+  static const schemeScreen = '/schemeScreen';
+  static const earasScreen = '/earasScreen';
+  static const investigatorScreen = '/investigatorScreen';
+  static const forgotPasswordScreen = '/forgotPasswordScreen';
+  static const loginScreen = '/loginScreen';
+  static const formScreen = '/formScreen';
+  static const clusterScreen = '/clusterScreen';
+  static const forgotScreen = '/forgotscreen';
+  static const clusterdetail = '/clusterDetailPage';
+  static const zonedetail = '/zoneDetailPage';
+  static const formdashboard = '/formDashboard';
+  static const keyplotOwner = '/keyplotOwner';
+  static const cropDetails = '/cropDetails';
+  static const landUtilization = '/landUtilization';
+  static const irrigation = '/irrigation';
+  static const cceplotlist = '/cceplotlist';
+  static const cceoutlist = '/cceoutlist';
+  static const preharvestdash = '/preharvestdash';
+  static const ccedataEntry = '/ccedataEntry';
+  static const cceReports = '/cceReports';
+  static const phcultivation = '/phcultivation';
+  static const ccedashboard = '/ccedashboard';
+  static const cceBasicPlot = '/cceBasicPlot';
+  static const cceLandFarmer = '/cceLandFarmer';
+}
